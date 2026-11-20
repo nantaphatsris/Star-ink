@@ -1,0 +1,1754 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Light The Star</title>
+
+<style>
+
+* { box-sizing: border-box; }
+:root {
+  --purple: #4d00a8;
+  --purple-dark: #21004d;
+  --text: #eee8f7;
+  --muted: #bdb3ca;
+}
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  color: var(--text);
+  font-family: Arial, sans-serif;
+  background:
+    radial-gradient(1px 1px at 12% 18%, #ffffffa8 99%, transparent),
+    radial-gradient(1px 1px at 76% 23%, #d9baff99 99%, transparent),
+    radial-gradient(1.5px 1.5px at 42% 72%, #ffffff88 99%, transparent),
+    radial-gradient(1px 1px at 88% 83%, #cba8ff99 99%, transparent),
+    radial-gradient(ellipse at 78% 10%, #3b075f 0%, transparent 45%),
+    radial-gradient(ellipse at 15% 90%, #190044 0%, transparent 55%),
+    #080516;
+  background-size: 130px 130px, 170px 170px, 210px 210px, 150px 150px, auto, auto, auto;
+}
+header {
+  min-height: 64px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 12px;
+  text-align: center;
+
+  /* ใช้ภาพกาแล็กซีเป็นพื้นหลังของแถบด้านบน */
+  background:
+    linear-gradient(rgba(10, 3, 24, 0.08), rgba(10, 3, 24, 0.08)),
+    url("picPanelLightthestar.jpg") center center / cover no-repeat;
+
+  border-bottom: 1px solid #7650a322;
+}
+
+  
+  h1 {
+  margin: 0;
+  color: #eee5f7;
+  font-family: Arial, sans-serif;
+  font-size: clamp(23px, 5vw, 28px);
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+  
+main {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 0 18px;
+}
+.camera-view {
+  position: relative;
+  width: 100%;
+  height: min(70vh, 680px);
+  min-height: 360px;
+  background: #000000;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+}
+video { display: none; }
+canvas#canvasOutput {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.crosshair {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #6000fb;
+  border-radius: 50%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 2;
+}
+.crosshair::before {
+  content: "";
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: #0bf4ec;
+  border-radius: 50%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+.coordinates { display: none; }
+#runAnimation {
+  display: none;
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  width: min(222px, 66%);
+  min-height: 49px;
+  padding: 10px 18px;
+  margin: 0;
+  border: 4px solid #18002f;
+
+background: linear-gradient(
+  100deg,
+  #281047,
+  #1b0a2e
+);
+
+box-shadow: 0 0 10px #2b075555;
+  cursor: pointer;
+}
+#runAnimation:disabled { opacity: .5; }
+.controls {
+  margin: 0;
+  padding: 24px 20px 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background:
+    radial-gradient(1px 1px at 15% 30%, #ffffff88 99%, transparent),
+    radial-gradient(1px 1px at 75% 65%, #c7a3ff88 99%, transparent),
+    linear-gradient(115deg, #100023, #210044 55%, #0b0620);
+  background-size: 110px 110px, 150px 150px, auto;
+}
+button {
+  width: 100%;
+  min-height: 78px;
+  padding: 12px 10px;
+  border: 1px solid #38204f;
+  border-radius: 20px;
+
+  /* ปุ่มสีม่วงเข้ม */
+  background: linear-gradient(
+  115deg,
+  #090014,
+  #130024 55%,
+  #070410
+);
+
+  color: #eee6f7;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+  cursor: pointer;
+
+  box-shadow: inset 0 1px 8px #00000055;
+}
+button:active { transform: scale(.985); }
+button:disabled {
+  background: #342b40;
+  color: #9991a4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+#startCamera, #resetTracking {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+#playerInfo {
+  grid-column: 1 / -1;
+  color: #d7cce4 !important;
+  font-size: 12px !important;
+  font-weight: 600;
+  text-align: center;
+  padding: 2px 0 0;
+}
+#status {
+  margin: 0;
+  padding: 7px 12px 2px;
+  color: #c5b8d3;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+  background: #100020;
+}
+.hint { display: none; }
+.diagnostics {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8px 12px 14px;
+  color: #a99bb9;
+  background: #0b0616;
+  border-top: 1px solid #55307855;
+  font: 10px/1.8 monospace;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 14px;
+}
+.diagnostics strong { color: #d6c8e5; font-weight: 600; }
+@media (min-width: 761px) {
+  main { max-width: 760px; }
+  .camera-view { height: min(68vh, 680px); }
+}
+@media (max-width: 380px) {
+  .controls { padding-left: 14px; padding-right: 14px; gap: 9px; }
+  button { font-size: 14px; }
+}
+
+
+/* ========================================
+   CONSTELLATION DISCOVERY OVERLAY
+   Layout: video on top, information panel fills the rest
+   ======================================== */
+#discoveryOverlay {
+  position: fixed;
+  inset: 64px 0 0;
+  z-index: 1000;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  background: #080516;
+  height: calc(100dvh - 64px);
+}
+#discoveryOverlay.is-open { display: flex; }
+
+.discovery-content {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* วิดีโออยู่ด้านบน เหมือนภาพ Reference */
+.discovery-video-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 38%;
+  overflow: hidden;
+  background: #000;
+}
+#discoveryVideo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+#videoFallback {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: #eee5f7;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.7;
+  background: #160b2c;
+}
+
+/* ปุ่มปิดจะถูกแสดงหลังวิดีโอเล่นครบหนึ่งรอบ */
+#closeDiscovery {
+  display: none;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(20, 17, 35, .28);
+  color: rgba(25, 25, 35, .72);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+  box-shadow: none;
+  backdrop-filter: blur(3px);
+}
+#closeDiscovery.is-visible { display: flex; align-items: center; justify-content: center; }
+
+.discovery-info {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow-y: auto;
+  border: 0;
+  border-radius: 0;
+  background:
+    radial-gradient(1px 1px at 18% 25%, #ffffff16 99%, transparent),
+    radial-gradient(1px 1px at 82% 70%, #d8baff16 99%, transparent),
+    linear-gradient(135deg, #352064, #402574 55%, #2b1552);
+  background-size: 120px 120px, 160px 160px, auto;
+  color: #fff;
+}
+.discovery-info-inner {
+  width: min(100%, 560px);
+  min-height: min(100%, 280px);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  border: 2px solid rgba(190, 170, 225, .28);
+  border-radius: 38px;
+  background: rgba(65, 43, 112, .24);
+  box-shadow: inset 0 0 20px rgba(255,255,255,.025);
+}
+#discoverySymbol {
+  margin: 0 0 8px;
+  color: #d9c8f4;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+#discoveryTitle {
+  margin: 0 0 14px;
+  color: #fff;
+  font-size: clamp(22px, 5vw, 30px);
+  line-height: 1.35;
+}
+#discoveryDescription {
+  margin: 0;
+  color: #eee8f7;
+  font-size: 14px;
+  line-height: 1.8;
+  white-space: pre-line;
+}
+@media (max-width: 480px) {
+  #discoveryOverlay {
+    inset: 64px 0 0;
+    height: calc(100dvh - 64px);
+  }
+  .discovery-info { padding: 14px; }
+  .discovery-info-inner {
+    min-height: 0;
+    padding: 22px 16px;
+    border-radius: 34px;
+  }
+  #discoveryDescription { font-size: 13px; }
+}
+
+</style>
+
+<script async
+  src="https://docs.opencv.org/4.x/opencv.js"
+  onload="onOpenCvReady();">
+</script>
+</head>
+
+<body>
+<header>
+  <h1>Light The Star</h1>
+</header>
+
+<section id="discoveryOverlay" aria-hidden="true" aria-label="ข้อมูลกลุ่มดาว">
+  <div class="discovery-content">
+    <div class="discovery-video-wrap">
+      <video id="discoveryVideo" autoplay muted loop playsinline preload="auto"></video>
+      <button id="closeDiscovery" type="button" aria-label="ปิดหน้าต่าง">×</button>
+      <div id="videoFallback">ยังไม่มีไฟล์ Animation ของกลุ่มดาวนี้<br>นำไฟล์วิดีโอไปใส่ในโฟลเดอร์ animations แล้วตั้งชื่อให้ตรงกับราศีได้เลย</div>
+    </div>
+    <article class="discovery-info">
+      <div class="discovery-info-inner">
+        <p id="discoverySymbol">CONSTELLATION</p>
+        <h2 id="discoveryTitle">Constellation</h2>
+        <p id="discoveryDescription"></p>
+      </div>
+    </article>
+  </div>
+</section>
+
+
+<main>
+  <div class="camera-view" id="cameraView">
+    <video id="camera" autoplay playsinline muted></video>
+    <canvas id="canvasOutput"></canvas>
+    <div class="crosshair"></div>
+    <button id="runAnimation" type="button"
+      title="เล่นอนิเมชัน" aria-label="เล่นอนิเมชัน">
+      Trigger Animation
+    </button>
+  </div>
+
+  <div class="controls">
+    <button id="startCamera" disabled>กำลังโหลด OpenCV.js...</button>
+    <button id="resetTracking" type="button">Reset<br>Hold Tracking</button>
+    <div id="playerInfo">Player: กำลังเชื่อมต่อ...</div>
+  </div>
+
+  <div id="status">สถานะ: รอโหลด OpenCV.js</div>
+
+  <div class="diagnostics" aria-label="ข้อมูลการตรวจจับ">
+    <span><strong>Screen:</strong> <span id="detectedStatus" style="color:#ff4d4d">NO</span></span>
+    <span><strong>Tracking:</strong> <span id="trackingStatus" style="color:#ff4d4d">NO</span></span>
+    <span><strong>X:</strong> <span id="coordX">0.50</span></span>
+    <span><strong>Y:</strong> <span id="coordY">0.50</span></span>
+  </div>
+</main>
+
+<script src="constellations.js"></script>
+<script>
+const camera = document.getElementById("camera");
+const canvasOutput = document.getElementById("canvasOutput");
+const button = document.getElementById("startCamera");
+const resetTrackingButton = document.getElementById("resetTracking");
+const status = document.getElementById("status");
+const coordX = document.getElementById("coordX");
+const coordY = document.getElementById("coordY");
+const detectedStatus = document.getElementById("detectedStatus");
+const trackingStatus = document.getElementById("trackingStatus");
+const playerInfo = document.getElementById("playerInfo");
+const runAnimationButton = document.getElementById("runAnimation");
+const ctx = canvasOutput.getContext("2d");
+
+let stream = null;
+let isOpenCvReady = false;
+let isProcessing = false;
+
+// ========================================
+// SCREEN LOCK + FEATURE TRACKING
+// ========================================
+
+let screenLocked = false;
+let lockedQuad = null;
+let previousGray = null;
+let previousPoints = null;
+
+let anchorX = 0.5;
+let anchorY = 0.5;
+
+let lastGoodXY = { x: 0.5, y: 0.5 };
+let smoothedXY = { x: 0.5, y: 0.5 };
+
+let lostFrames = 0;
+
+const XY_SMOOTHING_ALPHA = 0.22;
+const XY_DEADBAND = 0.0015;
+
+const MAX_FEATURES = 250;
+const MIN_FEATURES = 8;
+const MIN_INLIERS = 8;
+const MAX_TRACK_ERROR = 35;
+
+const MIN_AREA_RATIO = 0.025;
+const MAX_AREA_RATIO = 0.92;
+
+// ========================================
+// CONSTELLATION ZONE SETTINGS
+// ========================================
+
+// พิกัดอ้างอิงจากภาพท้องฟ้า 16:9 ที่ส่งมา
+// x/y = จุดกึ่งกลางของพื้นที่ตรวจจับ (normalized 0-1)
+// rx/ry = รัศมีแนวนอน/แนวตั้งของพื้นที่ตรวจจับ
+// ใช้เฉพาะกลุ่มดาว 12 ราศีที่มีเส้นสีขาวสว่าง
+// ไม่ใช้กลุ่มดาวหลอกที่มีเส้นสีม่วงจาง
+// หมายเหตุ: ตำแหน่งเป็นค่าเริ่มต้นจากภาพอ้างอิง อาจต้องจูนเล็กน้อย
+// หลังทดสอบกับภาพจริงใน TouchDesigner
+
+const CONSTELLATION_ZONES = [
+  { id: "gemini",      name: "Gemini",      x: 0.145, y: 0.130, rx: 0.115, ry: 0.105 },
+  { id: "virgo",       name: "Virgo",       x: 0.425, y: 0.115, rx: 0.065, ry: 0.105 },
+  { id: "pisces",      name: "Pisces",      x: 0.665, y: 0.155, rx: 0.105, ry: 0.095 },
+  { id: "leo",         name: "Leo",         x: 0.920, y: 0.265, rx: 0.065, ry: 0.085 },
+  { id: "aries",       name: "Aries",       x: 0.845, y: 0.535, rx: 0.070, ry: 0.075 },
+  { id: "sagittarius", name: "Sagittarius", x: 0.565, y: 0.425, rx: 0.075, ry: 0.090 },
+  { id: "scorpio",     name: "Scorpio",     x: 0.685, y: 0.700, rx: 0.060, ry: 0.090 },
+  { id: "libra",       name: "Libra",       x: 0.915, y: 0.875, rx: 0.060, ry: 0.080 },
+  { id: "aquarius",    name: "Aquarius",    x: 0.465, y: 0.890, rx: 0.065, ry: 0.075 },
+  { id: "taurus",      name: "Taurus",      x: 0.120, y: 0.865, rx: 0.080, ry: 0.080 },
+  { id: "cancer",      name: "Cancer",      x: 0.390, y: 0.610, rx: 0.065, ry: 0.095 },
+  { id: "capricorn",   name: "Capricorn",   x: 0.080, y: 0.540, rx: 0.065, ry: 0.085 }
+];
+
+let currentZone = null;
+let discoveredZone = null;
+let waitingForExit = false;
+let discoveryReady = false;
+
+// ใช้วงรีแทนกรอบสี่เหลี่ยม เพื่อให้พื้นที่ตรวจจับกระชับตามตำแหน่งกลุ่มดาว
+function isInsideZone(x, y, zone) {
+  const dx = (x - zone.x) / zone.rx;
+  const dy = (y - zone.y) / zone.ry;
+  return (dx * dx + dy * dy) <= 1;
+}
+
+function findZone(x, y) {
+  return CONSTELLATION_ZONES.find(zone =>
+    isInsideZone(x, y, zone)
+  ) || null;
+}
+
+function hideDiscoveryButton() {
+  runAnimationButton.style.display = "none";
+  discoveryReady = false;
+}
+
+function resetZoneDetection() {
+  currentZone = null;
+  discoveredZone = null;
+  waitingForExit = false;
+  hideDiscoveryButton();
+}
+
+function updateZoneDetection(x, y) {
+  const zone = findZone(x, y);
+
+  // ออกจากพื้นที่กลุ่มดาว: ซ่อนปุ่มและอนุญาตให้ค้นพบกลุ่มดาวใหม่
+  if (!zone) {
+    currentZone = null;
+    discoveredZone = null;
+    waitingForExit = false;
+    hideDiscoveryButton();
+    return;
+  }
+
+  // หลังสั่งเล่นแล้ว ต้องออกจากพื้นที่ก่อนจึงจะเลือกกลุ่มดาวใหม่ได้
+  if (waitingForExit) return;
+
+  // เมื่อ XY เข้าเขตกลุ่มดาว ให้แสดงปุ่มทันที ไม่ต้องรอเวลา
+  if (!currentZone || currentZone.id !== zone.id) {
+    currentZone = zone;
+    discoveredZone = zone;
+    discoveryReady = true;
+
+    runAnimationButton.textContent = "Discover " + zone.name;
+    runAnimationButton.style.display = "block";
+    runAnimationButton.disabled = false;
+
+    status.textContent = "พบพื้นที่กลุ่มดาว " + zone.name + " แล้ว! กดปุ่มเพื่อเล่น Animation";
+  }
+}
+
+// ========================================
+// OPENCV READY
+// ========================================
+
+function onOpenCvReady() {
+  if (typeof cv === "undefined") return;
+
+  cv.onRuntimeInitialized = () => {
+    if (isOpenCvReady) return;
+
+    isOpenCvReady = true;
+    status.textContent = "OpenCV พร้อมใช้งาน";
+    button.textContent = "Open Camera";
+    button.disabled = false;
+  };
+
+  if (cv.Mat && !isOpenCvReady) {
+    isOpenCvReady = true;
+    status.textContent = "OpenCV พร้อมใช้งาน";
+    button.textContent = "Open Camera";
+    button.disabled = false;
+  }
+}
+
+function setTargetStatus(found) {
+  detectedStatus.textContent = found ? "LOCKED" : "NO";
+  detectedStatus.style.color =
+    found ? "#0bf4ec" : "#ff4d4d";
+}
+
+function setTrackingStatus(found) {
+  trackingStatus.textContent = found ? "ACTIVE" : "HOLD";
+  trackingStatus.style.color =
+    found ? "#0bf4ec" : "#ffcf5a";
+}
+
+function displayCoordinates(x, y) {
+  coordX.textContent = Number(x).toFixed(3);
+  coordY.textContent = Number(y).toFixed(3);
+}
+
+// ========================================
+// WEBSOCKET
+// ========================================
+
+const WS_ENDPOINT =
+  "wss://ebook-posters-iowa-officials.trycloudflare.com";
+
+let socket = null;
+let playerId = null;
+let lastXYSendTime = 0;
+
+function connectWebSocket() {
+  if (socket &&
+      [WebSocket.OPEN, WebSocket.CONNECTING].includes(socket.readyState)) {
+    return;
+  }
+
+  socket = new WebSocket(WS_ENDPOINT);
+
+  socket.addEventListener("open", () => {
+    playerInfo.textContent =
+      "เชื่อมต่อแล้ว กำลังรับ Player ID...";
+  });
+
+  socket.addEventListener("message", event => {
+    try {
+      const data = JSON.parse(event.data);
+
+      if (data.type === "welcome") {
+        playerId = data.playerId;
+        playerInfo.textContent =
+          `Player ${playerId} / เชื่อมต่อแล้ว`;
+
+        if (stream) sendPlayerActive(true);
+
+      } else if (data.type === "error") {
+        playerInfo.textContent =
+          data.message || "Server error";
+      }
+
+    } catch (e) {
+      console.warn("WebSocket parse error", e);
+    }
+  });
+
+  socket.addEventListener("close", () => {
+    playerId = null;
+    playerInfo.textContent =
+      "เชื่อมต่อหลุด กำลัง reconnect...";
+
+    setTimeout(connectWebSocket, 1500);
+  });
+
+  socket.addEventListener("error", () => {
+    playerInfo.textContent =
+      "WebSocket เชื่อมต่อไม่สำเร็จ";
+  });
+}
+
+function wsSend(data) {
+  if (socket?.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(data));
+    return true;
+  }
+
+  return false;
+}
+
+function sendPlayerActive(active) {
+  wsSend({
+    type: "active",
+    active: Boolean(active)
+  });
+}
+
+function sendXYToTouchDesigner(x, y) {
+  const now = performance.now();
+
+  if (now - lastXYSendTime < 50) return;
+
+  lastXYSendTime = now;
+
+  wsSend({
+    type: "xy",
+    x: Math.max(0, Math.min(1, Number(x))),
+    y: Math.max(0, Math.min(1, Number(y)))
+  });
+}
+
+// ========================================
+// ANIMATION BUTTON
+// ========================================
+
+// ========================================
+// WEBSITE CONSTELLATION ANIMATION
+// ========================================
+
+const discoveryOverlay = document.getElementById("discoveryOverlay");
+const discoveryVideo = document.getElementById("discoveryVideo");
+const videoFallback = document.getElementById("videoFallback");
+const discoverySymbol = document.getElementById("discoverySymbol");
+const discoveryTitle = document.getElementById("discoveryTitle");
+const discoveryDescription = document.getElementById("discoveryDescription");
+const closeDiscoveryButton = document.getElementById("closeDiscovery");
+
+let isDiscoveryOpen = false;
+
+function openConstellationInfo(zone) {
+  if (!zone || !CONSTELLATION_INFO[zone.id]) return;
+
+  const info = CONSTELLATION_INFO[zone.id];
+  isDiscoveryOpen = true;
+
+  // ทุกครั้งที่เปิดกลุ่มดาวใหม่ ให้ซ่อนปุ่มปิดไว้ก่อน
+  discoveryVideo.pause();
+  discoveryVideo.loop = true;
+  discoveryVideo.currentTime = 0;
+  closeDiscoveryButton.classList.remove("is-visible");
+
+  let firstLoopCompleted = false;
+  let videoStarted = false;
+  let previousVideoTime = 0;
+
+  function revealCloseButton() {
+    if (firstLoopCompleted) return;
+    firstLoopCompleted = true;
+    closeDiscoveryButton.classList.add("is-visible");
+  }
+
+  discoverySymbol.textContent = info.symbol || "CONSTELLATION";
+  discoveryTitle.textContent =
+    (info.thaiName || zone.name) + " — " + (info.name || zone.name);
+  discoveryDescription.textContent =
+    info.description || "ยังไม่มีคำอธิบายสำหรับกลุ่มดาวนี้";
+
+  videoFallback.style.display = "none";
+  videoFallback.textContent =
+    "ยังไม่มีไฟล์ Animation ของกลุ่มดาวนี้\\nนำไฟล์วิดีโอไปใส่ในโฟลเดอร์ animations แล้วตั้งชื่อให้ตรงกับราศีได้เลย";
+
+  discoveryVideo.onerror = () => {
+    discoveryVideo.style.display = "none";
+    videoFallback.style.display = "flex";
+    // หากเล่นไม่ได้ ให้ผู้ใช้ปิดหน้าข้อมูลได้ ไม่ติดค้าง
+    revealCloseButton();
+  };
+
+  discoveryVideo.onloadeddata = () => {
+    discoveryVideo.style.display = "block";
+    videoFallback.style.display = "none";
+  };
+
+  discoveryVideo.onplaying = () => {
+    videoStarted = true;
+  };
+
+  // วิดีโอมี loop=true จึงตรวจจับการเล่นครบหนึ่งรอบด้วย currentTime
+  // เมื่อเวลาเล่นเกือบถึงท้ายคลิป จึงค่อยแสดงปุ่ม ×
+  discoveryVideo.ontimeupdate = () => {
+    const duration = discoveryVideo.duration;
+    const currentTime = discoveryVideo.currentTime;
+
+    if (
+      videoStarted &&
+      Number.isFinite(duration) &&
+      duration > 0 &&
+      (
+        currentTime >= duration - Math.max(0.2, duration * 0.01) ||
+        (previousVideoTime > duration * 0.8 && currentTime < previousVideoTime)
+      )
+    ) {
+      revealCloseButton();
+    }
+
+    previousVideoTime = currentTime;
+  };
+
+  discoveryVideo.src = info.video || "";
+  discoveryVideo.load();
+
+  discoveryOverlay.classList.add("is-open");
+  discoveryOverlay.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+
+  if (info.video) {
+    discoveryVideo.play().catch(() => {
+      videoFallback.style.display = "flex";
+      videoFallback.textContent =
+        "ไม่สามารถเล่นวิดีโออัตโนมัติได้ กรุณาตรวจสอบไฟล์ Animation";
+      // ป้องกันกรณี autoplay ถูกบล็อกจนไม่สามารถออกจากหน้านี้ได้
+      revealCloseButton();
+    });
+  } else {
+    discoveryVideo.style.display = "none";
+    videoFallback.style.display = "flex";
+    revealCloseButton();
+  }
+}
+
+function closeConstellationInfo() {
+  isDiscoveryOpen = false;
+  discoveryOverlay.classList.remove("is-open");
+  discoveryOverlay.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+
+  discoveryVideo.pause();
+  discoveryVideo.ontimeupdate = null;
+  discoveryVideo.onplaying = null;
+  discoveryVideo.onerror = null;
+  discoveryVideo.onloadeddata = null;
+  discoveryVideo.removeAttribute("src");
+  discoveryVideo.load();
+  closeDiscoveryButton.classList.remove("is-visible");
+
+  // ไม่ปิดกล้อง ไม่รีเซ็ตการล็อก และไม่เปลี่ยนพิกัดล่าสุด
+  // processVideo จะทำงานต่อเองเมื่อปิดหน้าต่าง
+}
+
+runAnimationButton.addEventListener("click", () => {
+  if (!discoveryReady || !discoveredZone || isDiscoveryOpen) return;
+
+  const selectedConstellation = discoveredZone;
+
+  // เก็บระบบส่ง XY ไป TouchDesigner ตามเดิม
+  // แต่การเล่น Animation จะเกิดบนหน้าเว็บไซต์ ไม่ส่งคำสั่งไป TD
+  openConstellationInfo(selectedConstellation);
+
+  hideDiscoveryButton();
+  waitingForExit = true;
+});
+
+closeDiscoveryButton.addEventListener("click", closeConstellationInfo);
+
+// เริ่มเชื่อมต่อ
+connectWebSocket();
+
+// ========================================
+// GEOMETRY
+// ========================================
+
+function polygonArea(points) {
+  let area = 0;
+
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i];
+    const b = points[(i + 1) % points.length];
+
+    area += a.x * b.y - b.x * a.y;
+  }
+
+  return Math.abs(area / 2);
+}
+
+function centerOf(points) {
+  return {
+    x: points.reduce((s, p) => s + p.x, 0) / points.length,
+    y: points.reduce((s, p) => s + p.y, 0) / points.length
+  };
+}
+
+function orderQuad(points) {
+  const center = centerOf(points);
+
+  const sorted = points.slice().sort((a, b) =>
+    Math.atan2(a.y - center.y, a.x - center.x) -
+    Math.atan2(b.y - center.y, b.x - center.x)
+  );
+
+  let start = 0;
+  let minSum = Infinity;
+
+  sorted.forEach((p, i) => {
+    const sum = p.x + p.y;
+
+    if (sum < minSum) {
+      minSum = sum;
+      start = i;
+    }
+  });
+
+  let ordered = sorted.slice(start).concat(sorted.slice(0, start));
+
+  const cross =
+    (ordered[1].x - ordered[0].x) *
+    (ordered[2].y - ordered[1].y) -
+    (ordered[1].y - ordered[0].y) *
+    (ordered[2].x - ordered[1].x);
+
+  if (cross < 0) {
+    ordered = [
+      ordered[0], ordered[3],
+      ordered[2], ordered[1]
+    ];
+  }
+
+  if (ordered[1].x < ordered[3].x) {
+    ordered = [
+      ordered[0], ordered[3],
+      ordered[2], ordered[1]
+    ];
+  }
+
+  return ordered;
+}
+
+// ========================================
+// FIRST SCREEN DETECTION
+// ========================================
+
+function extractCandidates(srcMat, width, height) {
+  const candidates = [];
+
+  const gray = new cv.Mat();
+  const blurred = new cv.Mat();
+  const edges = new cv.Mat();
+  const closed = new cv.Mat();
+  const contours = new cv.MatVector();
+  const hierarchy = new cv.Mat();
+  const kernel = cv.getStructuringElement(
+    cv.MORPH_RECT,
+    new cv.Size(9, 9)
+  );
+
+  try {
+    cv.cvtColor(srcMat, gray, cv.COLOR_RGBA2GRAY);
+    cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
+    cv.Canny(blurred, edges, 22, 85);
+    cv.morphologyEx(edges, closed, cv.MORPH_CLOSE, kernel);
+
+    cv.findContours(
+      closed,
+      contours,
+      hierarchy,
+      cv.RETR_LIST,
+      cv.CHAIN_APPROX_SIMPLE
+    );
+
+    const imageArea = width * height;
+
+    for (let i = 0; i < contours.size(); i++) {
+      const contour = contours.get(i);
+      const approx = new cv.Mat();
+
+      try {
+        const areaRatio =
+          Math.abs(cv.contourArea(contour)) / imageArea;
+
+        if (areaRatio < MIN_AREA_RATIO ||
+            areaRatio > MAX_AREA_RATIO) continue;
+
+        const perimeter = cv.arcLength(contour, true);
+        let found = false;
+
+        for (const eps of [0.018, 0.025, 0.035, 0.045]) {
+          cv.approxPolyDP(
+            contour,
+            approx,
+            eps * perimeter,
+            true
+          );
+
+          if (approx.rows === 4 &&
+              cv.isContourConvex(approx)) {
+            found = true;
+            break;
+          }
+        }
+
+        if (!found) continue;
+
+        const points = [];
+
+        for (let j = 0; j < 4; j++) {
+          const p = approx.intPtr(j, 0);
+          points.push({ x: p[0], y: p[1] });
+        }
+
+        const ordered = orderQuad(points);
+        const area = polygonArea(ordered);
+        const xs = ordered.map(p => p.x);
+        const ys = ordered.map(p => p.y);
+
+        const w = Math.max(...xs) - Math.min(...xs);
+        const h = Math.max(...ys) - Math.min(...ys);
+
+        if (w < width * 0.18 ||
+            h < height * 0.10) continue;
+
+        const aspect = w / Math.max(h, 1);
+
+        if (aspect < 1.10 || aspect > 2.80) continue;
+
+        candidates.push({
+          points: ordered,
+          area,
+          center: centerOf(ordered)
+        });
+
+      } finally {
+        approx.delete();
+        contour.delete();
+      }
+    }
+
+  } finally {
+    gray.delete();
+    blurred.delete();
+    edges.delete();
+    closed.delete();
+    contours.delete();
+    hierarchy.delete();
+    kernel.delete();
+  }
+
+  candidates.sort((a, b) => b.area - a.area);
+  return candidates;
+}
+
+// ========================================
+// FEATURE MASK
+// ========================================
+
+function createScreenMask(gray, quad) {
+  const mask = cv.Mat.zeros(
+    gray.rows,
+    gray.cols,
+    cv.CV_8UC1
+  );
+
+  const points = cv.matFromArray(
+    4, 1, cv.CV_32SC2,
+    quad.flatMap(p => [
+      Math.round(p.x),
+      Math.round(p.y)
+    ])
+  );
+
+  const polygons = new cv.MatVector();
+  polygons.push_back(points);
+
+  try {
+    cv.fillPoly(
+      mask,
+      polygons,
+      new cv.Scalar(255)
+    );
+  } finally {
+    points.delete();
+    polygons.delete();
+  }
+
+  return mask;
+}
+
+function detectFeatures(gray, quad, maxCount = MAX_FEATURES) {
+  const mask = createScreenMask(gray, quad);
+  const corners = new cv.Mat();
+
+  try {
+    cv.goodFeaturesToTrack(
+      gray,
+      corners,
+      maxCount,
+      0.008,
+      7,
+      mask,
+      5,
+      false,
+      0.04
+    );
+
+    return corners.clone();
+
+  } finally {
+    mask.delete();
+    corners.delete();
+  }
+}
+
+// ========================================
+// INITIALIZE TRACKING
+// ========================================
+
+function initializeTracking(gray, quad) {
+  if (previousGray) previousGray.delete();
+  if (previousPoints) previousPoints.delete();
+
+  previousGray = gray.clone();
+  previousPoints = detectFeatures(gray, quad);
+
+  if (previousPoints.rows < MIN_FEATURES) {
+    console.warn("Feature points น้อยเกินไป:", previousPoints.rows);
+    return false;
+  }
+
+  const center = mapCameraCenter(quad);
+
+  if (!center) return false;
+
+  anchorX = center.x;
+  anchorY = center.y;
+
+  smoothedXY = { x: 0.5, y: 0.5 };
+  lastGoodXY = { x: 0.5, y: 0.5 };
+
+  displayCoordinates(0.5, 0.5);
+  sendXYToTouchDesigner(0.5, 0.5);
+
+  console.log(
+    "Screen locked. Feature points:",
+    previousPoints.rows
+  );
+
+  return true;
+}
+
+// ========================================
+// MAP CAMERA CENTER
+// ========================================
+
+function mapCameraCenter(quad) {
+  let src = null;
+  let dst = null;
+  let transform = null;
+  let point = null;
+  let result = null;
+
+  try {
+    src = cv.matFromArray(
+      4, 1, cv.CV_32FC2,
+      quad.flatMap(p => [p.x, p.y])
+    );
+
+    dst = cv.matFromArray(
+      4, 1, cv.CV_32FC2,
+      [0, 0, 1, 0, 1, 1, 0, 1]
+    );
+
+    transform = cv.getPerspectiveTransform(src, dst);
+
+    point = cv.matFromArray(
+      1, 1, cv.CV_32FC2,
+      [camera.videoWidth / 2, camera.videoHeight / 2]
+    );
+
+    result = new cv.Mat();
+
+    cv.perspectiveTransform(point, result, transform);
+
+    const x = result.data32F[0];
+    const y = result.data32F[1];
+
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+
+    return { x, y };
+
+  } catch (e) {
+    console.warn("mapCameraCenter:", e);
+    return null;
+
+  } finally {
+    [src, dst, transform, point, result].forEach(m => {
+      if (m) m.delete();
+    });
+  }
+}
+
+// ========================================
+// OPTICAL FLOW TRACKING
+// ========================================
+
+function pointInsideQuad(point, quad) {
+  let inside = false;
+
+  for (let i = 0, j = quad.length - 1;
+       i < quad.length;
+       j = i++) {
+
+    const xi = quad[i].x;
+    const yi = quad[i].y;
+    const xj = quad[j].x;
+    const yj = quad[j].y;
+
+    const intersect =
+      ((yi > point.y) !== (yj > point.y)) &&
+      (point.x <
+        (xj - xi) * (point.y - yi) /
+        ((yj - yi) || 0.00001) + xi);
+
+    if (intersect) inside = !inside;
+  }
+
+  return inside;
+}
+
+function trackScreen(gray) {
+  if (!previousGray || !previousPoints ||
+      previousPoints.rows < MIN_FEATURES) {
+    return false;
+  }
+
+  let nextPoints = new cv.Mat();
+  let statusMat = new cv.Mat();
+  let errorMat = new cv.Mat();
+  let homography = null;
+  let inlierMask = null;
+  let oldInliers = null;
+  let newInliers = null;
+  let quadMat = null;
+  let movedQuadMat = null;
+  let freshPoints = null;
+
+  try {
+    const winSize = new cv.Size(31, 31);
+
+    cv.calcOpticalFlowPyrLK(
+      previousGray,
+      gray,
+      previousPoints,
+      nextPoints,
+      statusMat,
+      errorMat,
+      winSize,
+      3,
+      new cv.TermCriteria(
+        cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT,
+        30,
+        0.01
+      )
+    );
+
+    const oldData = previousPoints.data32F;
+    const newData = nextPoints.data32F;
+    const statuses = statusMat.data;
+    const errors = errorMat.data32F;
+
+    const srcList = [];
+    const dstList = [];
+
+    for (let i = 0; i < statuses.length; i++) {
+      if (!statuses[i]) continue;
+      if (errors[i] > MAX_TRACK_ERROR) continue;
+
+      const ox = oldData[i * 2];
+      const oy = oldData[i * 2 + 1];
+      const nx = newData[i * 2];
+      const ny = newData[i * 2 + 1];
+
+      if (!Number.isFinite(nx) || !Number.isFinite(ny)) continue;
+
+      srcList.push(ox, oy);
+      dstList.push(nx, ny);
+    }
+
+    const count = srcList.length / 2;
+
+    if (count < MIN_INLIERS) return false;
+
+    oldInliers = cv.matFromArray(
+      count, 1, cv.CV_32FC2, srcList
+    );
+
+    newInliers = cv.matFromArray(
+      count, 1, cv.CV_32FC2, dstList
+    );
+
+    inlierMask = new cv.Mat();
+
+    homography = cv.findHomography(
+      oldInliers,
+      newInliers,
+      cv.RANSAC,
+      3,
+      inlierMask
+    );
+
+    if (homography.empty()) return false;
+
+    let inlierCount = 0;
+    const maskData = inlierMask.data;
+
+    for (let i = 0; i < maskData.length; i++) {
+      if (maskData[i]) inlierCount++;
+    }
+
+    if (inlierCount < MIN_INLIERS) return false;
+
+    quadMat = cv.matFromArray(
+      4, 1, cv.CV_32FC2,
+      lockedQuad.flatMap(p => [p.x, p.y])
+    );
+
+    movedQuadMat = new cv.Mat();
+
+    cv.perspectiveTransform(
+      quadMat,
+      movedQuadMat,
+      homography
+    );
+
+    const q = movedQuadMat.data32F;
+
+    const newQuad = [
+      { x: q[0], y: q[1] },
+      { x: q[2], y: q[3] },
+      { x: q[4], y: q[5] },
+      { x: q[6], y: q[7] }
+    ];
+
+    if (newQuad.some(p =>
+      !Number.isFinite(p.x) ||
+      !Number.isFinite(p.y) ||
+      Math.abs(p.x) > gray.cols * 3 ||
+      Math.abs(p.y) > gray.rows * 3
+    )) {
+      return false;
+    }
+
+    lockedQuad = newQuad;
+
+    const currentCenter = mapCameraCenter(lockedQuad);
+
+    if (!currentCenter) return false;
+
+    const rawX = 0.5 + (currentCenter.x - anchorX);
+    const rawY = 0.5 + (currentCenter.y - anchorY);
+
+    const x = Math.max(0, Math.min(1, rawX));
+    const y = Math.max(0, Math.min(1, rawY));
+
+    let dx = x - smoothedXY.x;
+    let dy = y - smoothedXY.y;
+
+    if (Math.abs(dx) < XY_DEADBAND) dx = 0;
+    if (Math.abs(dy) < XY_DEADBAND) dy = 0;
+
+    smoothedXY = {
+      x: Math.max(0, Math.min(1,
+        smoothedXY.x + dx * XY_SMOOTHING_ALPHA)),
+      y: Math.max(0, Math.min(1,
+        smoothedXY.y + dy * XY_SMOOTHING_ALPHA))
+    };
+
+    lastGoodXY = { ...smoothedXY };
+
+    const tracked = [];
+
+    for (let i = 0; i < statuses.length; i++) {
+      if (!statuses[i] || errors[i] > MAX_TRACK_ERROR) continue;
+
+      const p = {
+        x: newData[i * 2],
+        y: newData[i * 2 + 1]
+      };
+
+      if (pointInsideQuad(p, lockedQuad)) {
+        tracked.push(p.x, p.y);
+      }
+    }
+
+    freshPoints = detectFeatures(gray, lockedQuad, MAX_FEATURES);
+    const fresh = freshPoints.data32F;
+
+    for (let i = 0; i < fresh.length; i += 2) {
+      if (tracked.length / 2 >= MAX_FEATURES) break;
+
+      const x2 = fresh[i];
+      const y2 = fresh[i + 1];
+
+      let tooClose = false;
+
+      for (let j = 0; j < tracked.length; j += 2) {
+        if (Math.hypot(
+          tracked[j] - x2,
+          tracked[j + 1] - y2
+        ) < 9) {
+          tooClose = true;
+          break;
+        }
+      }
+
+      if (!tooClose) tracked.push(x2, y2);
+    }
+
+    if (tracked.length / 2 >= MIN_FEATURES) {
+      const replacement = cv.matFromArray(
+        tracked.length / 2,
+        1,
+        cv.CV_32FC2,
+        tracked
+      );
+
+      previousPoints.delete();
+      previousPoints = replacement;
+    } else {
+      return false;
+    }
+
+    previousGray.delete();
+    previousGray = gray.clone();
+
+    lostFrames = 0;
+
+    displayCoordinates(lastGoodXY.x, lastGoodXY.y);
+    sendXYToTouchDesigner(lastGoodXY.x, lastGoodXY.y);
+
+    // ตรวจจับเขตกลุ่มดาวจาก X/Y ล่าสุด
+    updateZoneDetection(lastGoodXY.x, lastGoodXY.y);
+
+    return true;
+
+  } catch (error) {
+    console.warn("Optical Flow tracking:", error);
+    return false;
+
+  } finally {
+    [
+      nextPoints,
+      statusMat,
+      errorMat,
+      homography,
+      inlierMask,
+      oldInliers,
+      newInliers,
+      quadMat,
+      movedQuadMat,
+      freshPoints
+    ].forEach(m => {
+      if (m) m.delete();
+    });
+  }
+}
+
+// ========================================
+// DRAW OVERLAYS
+// ========================================
+
+function drawPolygon(mat, points, color, thickness) {
+  const scalar = color === "cyan"
+    ? new cv.Scalar(11, 244, 236, 255)
+    : new cv.Scalar(255, 180, 0, 255);
+
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i];
+    const b = points[(i + 1) % points.length];
+
+    cv.line(
+      mat,
+      new cv.Point(Math.round(a.x), Math.round(a.y)),
+      new cv.Point(Math.round(b.x), Math.round(b.y)),
+      scalar,
+      thickness
+    );
+  }
+}
+
+function drawFeatures(mat, points) {
+  if (!points) return;
+
+  const data = points.data32F;
+
+  for (let i = 0; i < data.length; i += 2) {
+    cv.circle(
+      mat,
+      new cv.Point(
+        Math.round(data[i]),
+        Math.round(data[i + 1])
+      ),
+      2,
+      new cv.Scalar(0, 255, 150, 255),
+      -1
+    );
+  }
+}
+
+// ========================================
+// VIDEO LOOP
+// ========================================
+
+function processVideo() {
+  if (!isProcessing) return;
+
+  // ระหว่างเปิดข้อมูลกลุ่มดาว ให้ค้างภาพและพิกัดล่าสุดไว้
+  // แต่ยังคงกล้องที่เปิดอยู่ ไม่ต้องปิดหรือเริ่มกล้องใหม่
+  if (isDiscoveryOpen) {
+    requestAnimationFrame(processVideo);
+    return;
+  }
+
+  if (!camera.videoWidth || !camera.videoHeight) {
+    requestAnimationFrame(processVideo);
+    return;
+  }
+
+  const width = camera.videoWidth;
+  const height = camera.videoHeight;
+
+  if (canvasOutput.width !== width ||
+      canvasOutput.height !== height) {
+    canvasOutput.width = width;
+    canvasOutput.height = height;
+  }
+
+  ctx.drawImage(camera, 0, 0, width, height);
+
+  let srcMat = null;
+  let gray = null;
+
+  try {
+    srcMat = cv.imread(canvasOutput);
+    gray = new cv.Mat();
+
+    cv.cvtColor(srcMat, gray, cv.COLOR_RGBA2GRAY);
+
+    if (!screenLocked) {
+      const candidates = extractCandidates(
+        srcMat,
+        width,
+        height
+      );
+
+      if (candidates.length > 0) {
+        const chosen = candidates[0];
+
+        lockedQuad = chosen.points.map(p => ({
+          x: p.x,
+          y: p.y
+        }));
+
+        const initialized =
+          initializeTracking(gray, lockedQuad);
+
+        if (initialized) {
+          screenLocked = true;
+
+          setTargetStatus(true);
+          setTrackingStatus(true);
+
+          status.textContent =
+            "ล็อกจอสำเร็จ! ขยับกล้องเพื่อควบคุมวงกลมได้";
+
+          console.log("SCREEN LOCKED");
+        } else {
+          lockedQuad = null;
+          status.textContent =
+            "พบขอบจอแล้ว แต่จุดดาวยังไม่เพียงพอ กรุณารอ";
+        }
+      } else {
+        status.textContent =
+          "กำลังค้นหาขอบจอ... กรุณาจัดกล้องให้เห็นจอครบทั้ง 4 มุม";
+      }
+
+      if (!screenLocked) {
+        candidates.forEach(c => {
+          drawPolygon(srcMat, c.points, "orange", 2);
+        });
+      }
+
+    } else {
+      const tracked = trackScreen(gray);
+
+      if (tracked) {
+        setTargetStatus(true);
+        setTrackingStatus(true);
+
+        // สถานะการค้นพบถูกอัปเดตใน updateZoneDetection()
+        if (!discoveryReady && !waitingForExit) {
+          status.textContent =
+            "ล็อกจอแล้ว / กำลังติดตามภาพดาว";
+        }
+
+      } else {
+        lostFrames++;
+
+        setTargetStatus(true);
+        setTrackingStatus(false);
+
+        // หากภาพติดตามหาย ให้ซ่อนปุ่มเลือกกลุ่มดาว
+        resetZoneDetection();
+
+        displayCoordinates(
+          lastGoodXY.x,
+          lastGoodXY.y
+        );
+
+        status.textContent =
+          "ล็อกจออยู่ / ภาพติดตามขาดชั่วคราว กำลังคงพิกัดล่าสุด";
+      }
+
+      if (lockedQuad) {
+        drawPolygon(srcMat, lockedQuad, "cyan", 3);
+      }
+
+      drawFeatures(srcMat, previousPoints);
+    }
+
+    cv.imshow(canvasOutput, srcMat);
+
+  } catch (error) {
+    console.error("OpenCV error:", error);
+    status.textContent =
+      "เกิดข้อผิดพลาด ดูรายละเอียดใน Console";
+
+  } finally {
+    if (srcMat) srcMat.delete();
+    if (gray) gray.delete();
+  }
+
+  requestAnimationFrame(processVideo);
+}
+
+// ========================================
+// RESET TRACKER
+// ========================================
+
+function resetTracker() {
+  if (previousGray) {
+    previousGray.delete();
+    previousGray = null;
+  }
+
+  if (previousPoints) {
+    previousPoints.delete();
+    previousPoints = null;
+  }
+
+  screenLocked = false;
+  lockedQuad = null;
+  lostFrames = 0;
+
+  anchorX = 0.5;
+  anchorY = 0.5;
+
+  lastGoodXY = { x: 0.5, y: 0.5 };
+  smoothedXY = { x: 0.5, y: 0.5 };
+
+  resetZoneDetection();
+
+  setTargetStatus(false);
+  setTrackingStatus(false);
+  displayCoordinates(0.5, 0.5);
+}
+
+// รีเซ็ตการล็อกสี่เหลี่ยม โดยไม่ปิดกล้อง
+resetTrackingButton.addEventListener("click", () => {
+  if (!stream || !isProcessing) {
+    status.textContent = "กรุณาเปิดกล้องก่อนรีเซ็ตการตรวจจับ";
+    return;
+  }
+
+  resetTracker();
+  status.textContent = "รีเซ็ตแล้ว กำลังค้นหาขอบจอใหม่...";
+});
+
+// ========================================
+// CAMERA ON / OFF
+// ========================================
+
+button.addEventListener("click", async () => {
+  if (!isOpenCvReady) return;
+
+  if (stream) {
+    isProcessing = false;
+    sendPlayerActive(false);
+
+    stream.getTracks().forEach(track => track.stop());
+
+    stream = null;
+    camera.srcObject = null;
+
+    resetTracker();
+
+    ctx.clearRect(
+      0, 0,
+      canvasOutput.width,
+      canvasOutput.height
+    );
+
+    button.textContent = "Open Camera";
+    status.textContent = "Open Camera";
+
+    return;
+  }
+
+  try {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error(
+        "กรุณาเปิดเว็บผ่าน HTTPS หรือ localhost"
+      );
+    }
+
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
+    });
+
+    camera.srcObject = stream;
+
+    await camera.play();
+
+    resetTracker();
+
+    isProcessing = true;
+    sendPlayerActive(true);
+
+    button.textContent = "Close Camera";
+
+    status.textContent =
+      "กล้องพร้อมแล้ว กำลังค้นหาขอบจอครั้งแรก";
+
+    requestAnimationFrame(processVideo);
+
+  } catch (error) {
+    status.textContent =
+      "เปิดกล้องไม่สำเร็จ: " + error.message;
+
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+
+    stream = null;
+    isProcessing = false;
+    sendPlayerActive(false);
+  }
+});
+
+// ========================================
+// CLEANUP
+// ========================================
+
+window.addEventListener("pagehide", () => {
+  sendPlayerActive(false);
+
+  isProcessing = false;
+
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+  }
+
+  if (socket) socket.close();
+
+  resetTracker();
+});
+
+window.addEventListener("load", () => {
+  if (typeof cv !== "undefined" && cv.Mat) {
+    onOpenCvReady();
+  }
+});
+</script>
+</body>
+</html>
